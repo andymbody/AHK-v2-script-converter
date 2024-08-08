@@ -9,6 +9,7 @@ global	  gTagChar		:= chr(0x2605)
 		, gClassPtn		:= buildPtn_CLS()																		; class	   block (supports nesting)
 		, gMQSPtn		:= buildPtn_MStr()																		; v1 multi-line string-block (non expression)
 		, gIFPtn		:= buildPtn_IF()																		; 2024-08-06 AMB, ADDED
+		, gWhilePtn		:= buildPtn_While()																		; 2024-08-07 AMB, ADDED
 		, gLblPtn		:= buildPtn_Label()																		; 2024-08-06 AMB, ADDED
 		, gHotkeyPtn	:= buildPtn_Hotkey()																	; 2024-08-06 AMB, ADDED
 		, gHotStrPtn	:= '^:(?<Opts>[^:]+)*:(?<Trig>[^:]+)::'													; 2024-08-06 AMB, ADDED
@@ -720,6 +721,27 @@ class MLSTR extends PreMask
 	pattern		:= opt . '^\h*(?:' . exclude . declare . brcBlk
 ;	A_Clipboard := pattern
 	return		pattern
+}
+;################################################################################
+																 buildPtn_WHILE()
+;################################################################################
+{
+; WHILE-BLOCK pattern. Also supports non-block style
+
+	opt 	:= '(*UCP)(?im)'													; pattern options
+	LC		:= '(?:(?<=\s|)(?<!``);[^\v]*)'										; line comment (allows lead ws to be consumed already)
+	tagChar := (IsSet(gTagChar)) ? gTagChar : chr(0x2605)
+	TG		:= '(?:#TAG' tagChar '\w+' tagChar '#)'								; mask tags
+	CT		:= '(?:' . LC . '|' . TG . ')*'										; optional line comment OR tag
+	TCT		:= '(?>\s*' . CT . ')*'												; optional trailing comment or tag (MUST BE ATOMIC)
+	wPth	:= '(?<wArgG>(?:!+|NOT\h+)?\((?<Args>(?>[^()]|\((?&Args)\))*+)\))'	; wArgG	- argument group (in parenth), Args - indv args (allows multiline span)
+	noPth	:= '(?:.+)'															; no parentheses
+	wCond	:= '(?:' . wPth . '|' . noPth . ')' . TCT							; while condition, TCT - allows comments/tags to be present prior to single-line loop
+	declare	:= '^\h*\bWHILE\b\h*' . wCond										; declare - WHILE declaration
+	brcBlk	:= '(?:\s*(?<brcBlk>\{(?<BBC>(?>[^{}]|\{(?&BBC)})*+)})?)'			; brcBlk  - braces block, BBC - block contents (allows multiline span)
+	pattern := opt . declare . brcBlk . '.*'									; .*	  - captures full-single-line loop (if no brace-block)
+;	A_Clipboard := pattern
+	return	pattern
 }
 ;################################################################################
 																  buildPtn_MSTR()

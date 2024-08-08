@@ -1050,13 +1050,15 @@ FinalizeConvert(&code)
 ; 2024-06-27 ADDED, AMB
 ; Performs tasks that finalize overall conversion
 
-   ; Convert labels listed in gaList_LblsToFuncO
-   Loop gaList_LblsToFuncO.Length {
-      if (gaList_LblsToFuncO[A_Index].label)
-         code := ConvertLabel2Func(code, gaList_LblsToFuncO[A_Index].label,    gaList_LblsToFuncO[A_Index].parameters
-               , gaList_LblsToFuncO[A_Index].HasOwnProp("NewFunctionName")   ? gaList_LblsToFuncO[A_Index].NewFunctionName : ""
-               , gaList_LblsToFuncO[A_Index].HasOwnProp("aRegexReplaceList") ? gaList_LblsToFuncO[A_Index].aRegexReplaceList : "")
-   }
+;   ; Convert labels listed in gaList_LblsToFuncO
+;   Loop gaList_LblsToFuncO.Length {
+;      if (gaList_LblsToFuncO[A_Index].label)
+;         code := ConvertLabel2Func(code, gaList_LblsToFuncO[A_Index].label,    gaList_LblsToFuncO[A_Index].parameters
+;               , gaList_LblsToFuncO[A_Index].HasOwnProp("NewFunctionName")   ? gaList_LblsToFuncO[A_Index].NewFunctionName : ""
+;               , gaList_LblsToFuncO[A_Index].HasOwnProp("aRegexReplaceList") ? gaList_LblsToFuncO[A_Index].aRegexReplaceList : "")
+;   }
+
+   handleBlocks(&code)
 
    ; convert labels for OnClipboardChange
    if (InStr(code, "OnClipboardChange:")) {
@@ -1068,11 +1070,11 @@ FinalizeConvert(&code)
    code := RegExReplace(code, "i)([^(\s]*\.)ϨMaxIndex\(placeholder\)Ϩ", '$1Length != 0 ? $1Length : ""')
    code := RegExReplace(code, "i)([^(\s]*\.)ϨMinIndex\(placeholder\)Ϩ", '$1Length != 0 ? 1 : ""') ; Can be done in 4ArrayMethods.ahk, but done here to add EOLComment
 
-   ; trim the very last newline from end of code string
-   if (SubStr(code, -2) = "`r`n")
-      code := SubStr(code, 1, -2)
+;   ; trim the very last newline from end of code string
+;   if (SubStr(code, -2) = "`r`n")
+;      code := SubStr(code, 1, -2)
 
-   try code := AddBracket(code)         ; Add Brackets to Hotkeys
+;   try code := AddBracket(code)         ; Add Brackets to Hotkeys
    try code := UpdateGotoFunc(code)     ; Update Goto Label when Label is converted to a func
    try code := UpdateGoto(code)         ; Update Goto Label when Label is converted to a func
    try code := FixOnMessage(code)       ; Fix turning off OnMessage when defined after turn off
@@ -1082,6 +1084,36 @@ FinalizeConvert(&code)
 
    return ; code by reference
 }
+
+;################################################################################
+handleBlocks(&code)
+{
+;   tagHKStart := '#' . gTagChar . 'TAG_HKS' . gTagChar . '#'
+;   code := RegExReplace(code, 'm)(' . gHotkeyPtn . '.*)', tagHKStart . '`r`n$1')
+
+   pos := 1
+   While(pos := RegexMatch(code, gWhilePtn, &m, pos))
+   {
+      MsgBox "[" m[] "]"
+      pos += m.len
+   }
+
+;   ; Convert labels listed in gaList_LblsToFuncO
+;   Loop gaList_LblsToFuncO.Length {
+;      if (gaList_LblsToFuncO[A_Index].label)
+;         code := ConvertLabel2Func(code, gaList_LblsToFuncO[A_Index].label,    gaList_LblsToFuncO[A_Index].parameters
+;               , gaList_LblsToFuncO[A_Index].HasOwnProp("NewFunctionName")   ? gaList_LblsToFuncO[A_Index].NewFunctionName : ""
+;               , gaList_LblsToFuncO[A_Index].HasOwnProp("aRegexReplaceList") ? gaList_LblsToFuncO[A_Index].aRegexReplaceList : "")
+;   }
+;   ; trim the very last newline from end of code string
+   code := RegExReplace(code, '(?s)^(.+)`r`n$', '$1')
+;;   if (SubStr(code, -2) = "`r`n")
+;;      code := SubStr(code, 1, -2)
+
+;   try code := AddBracket(code)         ; Add Brackets to Hotkeys
+   return
+}
+
 ;################################################################################
 ; Convert a v1 function in a single script line to v2
 ;    Can be used from inside _Funcs for nested checks (e.g., function in a DllCall)
