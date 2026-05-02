@@ -273,7 +273,7 @@ class clsGuiLine
 			case 'FONT':
 			; 2026-04-22 AMB, UPDATED as part of fix for issue #479
 				comma			:= (gDynGuiNaming) ? ',' : ', '								; comma with/without trailing ws
-				p2				:= RegExReplace(this._p2,'(?i)(\bNORM)AL\b','$1')			; "Normal" -> "Norm" (part of fix for #479)
+				p2				:= RegExReplace(this._p2,'(?i)\b(NORM)\w*\b','$1')			; "Norm*" -> "Norm" (part of fix for #479)
 				p2				:= (p2		 != '')	? toExp(p2		,,1) : ''				; format param2
 				p3				:= (this._p3 != '') ? toExp(this._p3,,1) : ''				; format param3
 				params			:= Trim(p2 comma p3, comma)									; assemble, remove any trailing comma
