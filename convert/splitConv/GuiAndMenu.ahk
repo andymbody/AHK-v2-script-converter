@@ -242,7 +242,7 @@ GuiConv(p) {
 			Return LineResult curGuiName ".MarginX := " ToExp(OptCtrl,,1) ", " curGuiName ".MarginY := " ToExp(OptList,,1)
 		} else if (guiCmd = "Font") {
 			guiCmd := "SetFont"
-			OptCtrl := RegExReplace(OptCtrl,'(?i)(\bNORM)AL\b','$1')	; 2026-04-22 "Normal" -> "Norm" (part of fix for #479)
+			OptCtrl := RegExReplace(OptCtrl,'(?i)\b(NORM)\w*\b','$1')	; 2026-04-22 "Norm*" -> "Norm" (part of fix for #479)
 			gGuiActiveFont := ToExp(OptCtrl,,1) ", " ToExp(OptList,,1)
 		} else if (guiCmd = "Cancel") {
 			guiCmd := "Hide"
@@ -403,6 +403,7 @@ GuiControlConv(p) {
 ; 2026-03-11 AMB, UPDATED - to support simple/dynamic handling
 ; 2026-03-14 AMB, UPDATED - changed 'ogc' to gCtrlPfx
 ; 2026-04-23 AMB, UPDATED - to fix #480
+; 2026-05-01 AMB, UPDATED - to fix #482
 ; TODO
 ;	ADD SUPPORT FOR V1 EXPRESSION STRINGS, for SubCommand and ControlID
 ;	ADD SUPPORT FOR TERNANY IFS, for SubCommand and ControlID
@@ -567,13 +568,17 @@ GuiControlConv(p) {
 	} else if (SubCommand = "Show") {
 		Return ControlObject ".Visible := true"
 	} else if (SubCommand = "Choose") {
-		if (SubStr(Value, 1, 1) = "|")
-			Return "ControlChooseIndex(" ToExp(LTrim(Value, "|")) ", " ControlObject ")"
-		Return ControlObject ".Choose(" ToExp(Value) ")"	; 2026-04-23 - Fix for #480
+		; 2026-05-01 - updated fix for #482
+		if (!(ControlID ~= '(?i)LIST'))
+			return ControlObject ".Choose(" ToExp(value) ")"
+		trimStr := 'Integer(Trim(' ToExp(value) ',"|"))'
+		return '(InStr(' ToExp(value) ',"|")) && ControlChooseIndex(' trimStr ', ' ControlObject ') || ' ControlObject '.Choose(' trimStr ')'
 	} else if (SubCommand = "ChooseString") {
-		if (SubStr(Value, 1, 1) = "|")
-			Return "ControlChooseString(" ToExp(LTrim(Value, "|")) ", " ControlObject ")"
-		Return ControlObject ".Choose(" ToExp(Value) ")"
+		; 2026-05-01 - updated fix for #482
+		value := ToExp(value)
+		if (!(ControlID ~= '(?i)LIST'))
+			return ControlObject ".Choose(" value ")"
+		return '(InStr(' value ',"|")) && ControlChooseString(Trim(' value ',"|"), ' ControlObject ') || ' ControlObject '.Choose(' value ')'
 	} else if (SubCommand = "Font") {
 		if (gGuiActiveFont != "") {
 			Return ControlObject ".SetFont(" gGuiActiveFont ")"
